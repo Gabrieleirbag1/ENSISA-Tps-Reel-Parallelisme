@@ -8,6 +8,7 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <omp.h>
 
 using namespace std;
 
@@ -118,12 +119,7 @@ void royFloydWarshallThread(
             int lastRow = (threadId + 1) * summitCount / threadCount;
 
             threads.emplace_back([&, firstRow, lastRow, middle]() {
-                royFloydWarshallCore(
-                    matrix,
-                    summitCount,
-                    middle,
-                    firstRow,
-                    lastRow);
+                royFloydWarshallCore(matrix, summitCount, middle, firstRow, lastRow);
             });
         }
 
@@ -133,8 +129,29 @@ void royFloydWarshallThread(
     }
 }
 
-void displayGraph(const vector<Summit> &summits,
-                  const vector<vector<pair<int, int>>> &graph)
+void royFloydWarshallOpenMP(
+    int matrix[MAX_SUMMITS][MAX_SUMMITS],
+    int summitCount,
+    int threadCount) 
+{
+    omp_set_num_threads(threadCount);
+
+    for (int middle = 0; middle < summitCount; ++middle) {
+        #pragma omp parallel
+        {
+            int currentThread = omp_get_thread_num();
+            int firstRow = currentThread * summitCount / threadCount;
+            int lastRow = (currentThread + 1) * summitCount / threadCount;
+
+            royFloydWarshallCore(matrix, summitCount, middle, firstRow, lastRow);
+
+        }
+    }
+}
+
+void displayGraph(
+    const vector<Summit> &summits,
+    const vector<vector<pair<int, int>>> &graph)
 {
     cout << "Graphe oriente pondere :" << endl;
     for (int source = 0; source < static_cast<int>(summits.size()); ++source)
@@ -177,6 +194,7 @@ int main()
     graphToMatrix(graph, matrix);
 
     int matrixThread[MAX_SUMMITS][MAX_SUMMITS];
+    int matrixOpenMP[MAX_SUMMITS][MAX_SUMMITS];
 
     const int threadCount = 4;
 
@@ -192,14 +210,22 @@ int main()
     t.join();
     auto endThread = chrono::high_resolution_clock::now();
 
+    auto startOpenMP = chrono::high_resolution_clock::now();
+    royFloydWarshallOpenMP(matrixOpenMP, summitCount, threadCount);
+    auto endOpenMP = chrono::high_resolution_clock::now();
+
     chrono::duration<double> sequentialTime = endSequential - startSequential;
     chrono::duration<double> threadTime = endThread - startThread;
+    chrono::duration<double> openMPTime = endOpenMP - startOpenMP;
 
     double speedupThread = sequentialTime.count() / threadTime.count();
+    double speedupOpenMP = sequentialTime.count() / openMPTime.count();
 
     cout << "Temps sequentiel : " << sequentialTime.count() << " secondes" << endl;
     cout << "Temps std::thread : " << threadTime.count() << " secondes" << endl;
-    cout << "Speedup std::thread : " << speedupThread << endl;
+    cout << "Temps openMp : " << openMPTime.count() << " secondes" << endl;
+    cout << endl << "Speedup std::thread : " << speedupThread << endl;
+    cout << "Speedup openMp : " << speedupOpenMP << endl;
 
     // displayGraph(summits, graph);
 
