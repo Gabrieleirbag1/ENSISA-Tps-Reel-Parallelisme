@@ -72,8 +72,14 @@ void graphToMatrix(const vector<vector<pair<int, int>>> &graph, int matrix[MAX_S
     }
 }
 
-void royFloydWarshallCore(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount, int middle){
-    for (int source = 0; source < summitCount; ++source)
+void royFloydWarshallCore(
+    int matrix[MAX_SUMMITS][MAX_SUMMITS],
+    int summitCount,
+    int middle,
+    int firstRow,
+    int lastRow)
+{
+    for (int source = firstRow; source < lastRow; ++source)
         {
             for (int destination = 0; destination < summitCount; ++destination)
             {
@@ -93,28 +99,34 @@ void royFloydWarshall(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount)
 {
     for (int middle = 0; middle < summitCount; ++middle)
     {
-        royFloydWarshallCore(matrix, summitCount, middle);
+        royFloydWarshallCore(matrix, summitCount, middle, 0, summitCount);
     }
 }
 
-void royFloydWarshallThread(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount, int threadCount) {
+void royFloydWarshallThread(
+    int matrix[MAX_SUMMITS][MAX_SUMMITS],
+    int summitCount,
+    int threadCount)
+{
     threadCount = min(threadCount, summitCount);
 
     for (int middle = 0; middle < summitCount; ++middle) {
         vector<thread> threads;
 
-        for (int threadId = 0; threadId < threadCount; ++threadId) { // boucle pour chaque thread
+        for (int threadId = 0; threadId < threadCount; ++threadId) {
             int firstRow = threadId * summitCount / threadCount;
             int lastRow = (threadId + 1) * summitCount / threadCount;
 
             threads.emplace_back([&, firstRow, lastRow, middle]() {
-                for (int source = firstRow; source < lastRow; ++source) {
-                    royFloydWarshallCore(matrix, summitCount, middle);
-                }
+                royFloydWarshallCore(
+                    matrix,
+                    summitCount,
+                    middle,
+                    firstRow,
+                    lastRow);
             });
         }
 
-        // Attendre la fin de toutes les lignes avant de passer au sommet suivant
         for (thread& currentThread : threads) {
             currentThread.join();
         }
@@ -169,7 +181,9 @@ int main()
     const int threadCount = 4;
 
     auto startSequential = chrono::high_resolution_clock::now();
-    royFloydWarshall(matrix, summitCount);
+    for (int i = 0; i < 4; i++) {
+        royFloydWarshall(matrix, summitCount);
+    }
     auto endSequential = chrono::high_resolution_clock::now();
 
     auto startThread = chrono::high_resolution_clock::now();
@@ -183,10 +197,8 @@ int main()
 
     double speedupThread = sequentialTime.count() / threadTime.count();
 
-    cout << "Temps sequentiel : " << sequentialTime.count()
-         << " secondes" << endl;
-    cout << "Temps std::thread : " << threadTime.count()
-         << " secondes" << endl;
+    cout << "Temps sequentiel : " << sequentialTime.count() << " secondes" << endl;
+    cout << "Temps std::thread : " << threadTime.count() << " secondes" << endl;
     cout << "Speedup std::thread : " << speedupThread << endl;
 
     // displayGraph(summits, graph);
