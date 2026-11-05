@@ -5,6 +5,7 @@
 #include <random>
 #include <utility>
 #include <vector>
+#include <queue>
 #include <chrono>
 #include <thread>
 #include <algorithm>
@@ -74,12 +75,7 @@ void graphToMatrix(const vector<vector<pair<int, int>>> &graph, Matrix &matrix)
     }
 }
 
-void royFloydWarshallCore(
-    Matrix &matrix,
-    int summitCount,
-    int middle,
-    int firstRow,
-    int lastRow)
+void royFloydWarshallCore(Matrix &matrix, int summitCount, int middle, int firstRow, int lastRow)
 {
     for (int source = firstRow; source < lastRow; ++source)
         {
@@ -105,10 +101,7 @@ void royFloydWarshall(Matrix &matrix, int summitCount)
     }
 }
 
-void royFloydWarshallThread(
-    Matrix &matrix,
-    int summitCount,
-    int threadCount)
+void royFloydWarshallThread(Matrix &matrix, int summitCount, int threadCount)
 {
     threadCount = min(threadCount, summitCount);
 
@@ -130,10 +123,7 @@ void royFloydWarshallThread(
     }
 }
 
-void royFloydWarshallOpenMP(
-    Matrix &matrix,
-    int summitCount,
-    int threadCount) 
+void royFloydWarshallOpenMP(Matrix &matrix, int summitCount, int threadCount)
 {
     omp_set_num_threads(threadCount);
 
@@ -150,9 +140,35 @@ void royFloydWarshallOpenMP(
     }
 }
 
-void displayGraph(
-    const vector<Summit> &summits,
-    const vector<vector<pair<int, int>>> &graph)
+vector<int> breadthFirstSearch(const vector<vector<pair<int, int>>> &graph, int source)
+{
+    const int summitCount = static_cast<int>(graph.size());
+    vector<int> distances(summitCount, INF);
+    queue<int> pendingSummits;
+
+    distances[source] = 0;
+    pendingSummits.push(source);
+
+    while (!pendingSummits.empty())
+    {
+        int current = pendingSummits.front();
+        pendingSummits.pop();
+
+        for (const auto &[destination, weight] : graph[current])
+        {
+            (void)weight;
+            if (distances[destination] == INF)
+            {
+                distances[destination] = distances[current] + 1;
+                pendingSummits.push(destination);
+            }
+        }
+    }
+
+    return distances;
+}
+
+void displayGraph(const vector<Summit> &summits, const vector<vector<pair<int, int>>> &graph)
 {
     cout << "Graphe oriente pondere :" << endl;
     for (int source = 0; source < static_cast<int>(summits.size()); ++source)
@@ -200,6 +216,10 @@ int main()
         Matrix matrixThread = initialMatrix;
         Matrix matrixOpenMP = initialMatrix;
 
+        auto startBfs = chrono::high_resolution_clock::now();
+        vector<int> bfsDistances = breadthFirstSearch(graph, 0);
+        auto endBfs = chrono::high_resolution_clock::now();
+
         auto startSequential = chrono::high_resolution_clock::now();
         royFloydWarshall(matrixSequential, summitCount);
         auto endSequential = chrono::high_resolution_clock::now();
@@ -216,11 +236,23 @@ int main()
         chrono::duration<double> sequentialTime = endSequential - startSequential;
         chrono::duration<double> threadTime = endThread - startThread;
         chrono::duration<double> openMPTime = endOpenMP - startOpenMP;
+        chrono::duration<double> bfsTime = endBfs - startBfs;
 
         double speedupThread = sequentialTime.count() / threadTime.count();
         double speedupOpenMP = sequentialTime.count() / openMPTime.count();
+        int reachableSummits = 0;
+        for (int distance : bfsDistances)
+        {
+            if (distance != INF)
+            {
+                ++reachableSummits;
+            }
+        }
 
         cout << "N = " << summitCount << endl;
+        cout << "BFS depuis le sommet 1 :" << endl;
+        cout << "  Temps : " << bfsTime.count() << " secondes" << endl;
+        cout << "  Sommets atteignables : " << reachableSummits << "/" << summitCount << endl;
         cout << "Temps sequentiel : " << sequentialTime.count() << " secondes" << endl;
         cout << "Temps std::thread : " << threadTime.count() << " secondes" << endl;
         cout << "Temps openMp : " << openMPTime.count() << " secondes" << endl;
