@@ -72,3 +72,5 @@ make clean
 J'ai réalisé des essais avec le même type de graphe pour les différentes tailles de N, et les versions std::thread et OpenMP permettent de comparer l'effet du parallélisme sur le temps de calcul de Roy-Floyd-Warshall via le speedup.
 
 On voit que le gain dépend de la taille du graphe : pour les petites tailles, le coût de création et de synchronisation des threads peut limiter le speedup. Pour les graphes plus grands, on voit que ça a un réel impact. Également, le BFS est beaucoup plus rapide que Roy-Floyd-Warshall lorsqu'il est lancé depuis une seule source, car il ne cherche pas les distances entre toutes les paires de sommets.
+
+Voir  [`figure_1.png`](./figure_1.png) pour voir mes résultats.
