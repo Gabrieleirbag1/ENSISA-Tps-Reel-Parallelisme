@@ -12,8 +12,9 @@
 
 using namespace std;
 
-const int MAX_SUMMITS = 1000;
+vector<int> N = {100, 200, 300, 500};
 const int INF = numeric_limits<int>::max();
+using Matrix = vector<vector<int>>;
 
 int generateRandomNumber(int min, int max)
 {
@@ -54,14 +55,14 @@ vector<vector<pair<int, int>>> generateRandomGraph(int summitCount)
     return graph;
 }
 
-void graphToMatrix(const vector<vector<pair<int, int>>> &graph, int matrix[MAX_SUMMITS][MAX_SUMMITS])
+void graphToMatrix(const vector<vector<pair<int, int>>> &graph, Matrix &matrix)
 {
-    for (int source = 0; source < MAX_SUMMITS; ++source)
+    const int summitCount = static_cast<int>(graph.size());
+    matrix.assign(summitCount, vector<int>(summitCount, INF));
+
+    for (int source = 0; source < summitCount; ++source)
     {
-        for (int destination = 0; destination < MAX_SUMMITS; ++destination)
-        {
-            matrix[source][destination] = source == destination ? 0 : INF;
-        }
+        matrix[source][source] = 0;
     }
 
     for (int source = 0; source < static_cast<int>(graph.size()); ++source)
@@ -74,7 +75,7 @@ void graphToMatrix(const vector<vector<pair<int, int>>> &graph, int matrix[MAX_S
 }
 
 void royFloydWarshallCore(
-    int matrix[MAX_SUMMITS][MAX_SUMMITS],
+    Matrix &matrix,
     int summitCount,
     int middle,
     int firstRow,
@@ -96,7 +97,7 @@ void royFloydWarshallCore(
         }
 }
 
-void royFloydWarshall(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount)
+void royFloydWarshall(Matrix &matrix, int summitCount)
 {
     for (int middle = 0; middle < summitCount; ++middle)
     {
@@ -105,7 +106,7 @@ void royFloydWarshall(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount)
 }
 
 void royFloydWarshallThread(
-    int matrix[MAX_SUMMITS][MAX_SUMMITS],
+    Matrix &matrix,
     int summitCount,
     int threadCount)
 {
@@ -130,7 +131,7 @@ void royFloydWarshallThread(
 }
 
 void royFloydWarshallOpenMP(
-    int matrix[MAX_SUMMITS][MAX_SUMMITS],
+    Matrix &matrix,
     int summitCount,
     int threadCount) 
 {
@@ -165,7 +166,7 @@ void displayGraph(
     }
 }
 
-void displayMatrix(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount)
+void displayMatrix(const Matrix &matrix, int summitCount)
 {
     for (int source = 0; source < summitCount; ++source)
     {
@@ -186,54 +187,46 @@ void displayMatrix(int matrix[MAX_SUMMITS][MAX_SUMMITS], int summitCount)
 
 int main()
 {
-    int summitCount = generateRandomNumber(5, MAX_SUMMITS);
-    vector<Summit> summits = generateRandomSummits(summitCount);
-    vector<vector<pair<int, int>>> graph = generateRandomGraph(summitCount);
-    static int matrix[MAX_SUMMITS][MAX_SUMMITS];
-
-    graphToMatrix(graph, matrix);
-
-    int matrixThread[MAX_SUMMITS][MAX_SUMMITS];
-    int matrixOpenMP[MAX_SUMMITS][MAX_SUMMITS];
-
     const int threadCount = 4;
 
-    auto startSequential = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 4; i++) {
-        royFloydWarshall(matrix, summitCount);
+    for (int summitCount : N)
+    {
+        vector<Summit> summits = generateRandomSummits(summitCount);
+        vector<vector<pair<int, int>>> graph = generateRandomGraph(summitCount);
+        Matrix initialMatrix;
+        graphToMatrix(graph, initialMatrix);
+
+        Matrix matrixSequential = initialMatrix;
+        Matrix matrixThread = initialMatrix;
+        Matrix matrixOpenMP = initialMatrix;
+
+        auto startSequential = chrono::high_resolution_clock::now();
+        royFloydWarshall(matrixSequential, summitCount);
+        auto endSequential = chrono::high_resolution_clock::now();
+
+        auto startThread = chrono::high_resolution_clock::now();
+        std::thread t{royFloydWarshallThread, ref(matrixThread), summitCount, threadCount};
+        t.join();
+        auto endThread = chrono::high_resolution_clock::now();
+
+        auto startOpenMP = chrono::high_resolution_clock::now();
+        royFloydWarshallOpenMP(matrixOpenMP, summitCount, threadCount);
+        auto endOpenMP = chrono::high_resolution_clock::now();
+
+        chrono::duration<double> sequentialTime = endSequential - startSequential;
+        chrono::duration<double> threadTime = endThread - startThread;
+        chrono::duration<double> openMPTime = endOpenMP - startOpenMP;
+
+        double speedupThread = sequentialTime.count() / threadTime.count();
+        double speedupOpenMP = sequentialTime.count() / openMPTime.count();
+
+        cout << "N = " << summitCount << endl;
+        cout << "Temps sequentiel : " << sequentialTime.count() << " secondes" << endl;
+        cout << "Temps std::thread : " << threadTime.count() << " secondes" << endl;
+        cout << "Temps openMp : " << openMPTime.count() << " secondes" << endl;
+        cout << "Speedup std::thread : " << speedupThread << endl;
+        cout << "Speedup openMp : " << speedupOpenMP << endl << endl;
     }
-    auto endSequential = chrono::high_resolution_clock::now();
-
-    auto startThread = chrono::high_resolution_clock::now();
-    std::thread t;
-    t = std::thread{royFloydWarshallThread, matrix, summitCount, threadCount};
-    t.join();
-    auto endThread = chrono::high_resolution_clock::now();
-
-    auto startOpenMP = chrono::high_resolution_clock::now();
-    royFloydWarshallOpenMP(matrixOpenMP, summitCount, threadCount);
-    auto endOpenMP = chrono::high_resolution_clock::now();
-
-    chrono::duration<double> sequentialTime = endSequential - startSequential;
-    chrono::duration<double> threadTime = endThread - startThread;
-    chrono::duration<double> openMPTime = endOpenMP - startOpenMP;
-
-    double speedupThread = sequentialTime.count() / threadTime.count();
-    double speedupOpenMP = sequentialTime.count() / openMPTime.count();
-
-    cout << "Temps sequentiel : " << sequentialTime.count() << " secondes" << endl;
-    cout << "Temps std::thread : " << threadTime.count() << " secondes" << endl;
-    cout << "Temps openMp : " << openMPTime.count() << " secondes" << endl;
-    cout << endl << "Speedup std::thread : " << speedupThread << endl;
-    cout << "Speedup openMp : " << speedupOpenMP << endl;
-
-    // displayGraph(summits, graph);
-
-    // cout << "\nMatrice d'adjacence :" << endl;
-    // displayMatrix(matrix, summitCount);
-
-    // cout << "\nDistances minimales :" << endl;
-    // displayMatrix(matrix, summitCount);
 
     return 0;
 }
