@@ -17,6 +17,7 @@ vector<int> N = {100, 200, 300, 500};
 const int INF = numeric_limits<int>::max();
 using Matrix = vector<vector<int>>;
 
+// pour générer un nombre aléatoire entre min et max pour générer un graph random
 int generateRandomNumber(int min, int max)
 {
     static std::random_device randomDevice;
@@ -56,6 +57,7 @@ vector<vector<pair<int, int>>> generateRandomGraph(int summitCount)
     return graph;
 }
 
+// conversion du graph en matrix
 void graphToMatrix(const vector<vector<pair<int, int>>> &graph, Matrix &matrix)
 {
     const int summitCount = static_cast<int>(graph.size());
@@ -75,6 +77,7 @@ void graphToMatrix(const vector<vector<pair<int, int>>> &graph, Matrix &matrix)
     }
 }
 
+// implementation de la methode royfloyd
 void royFloydWarshallCore(Matrix &matrix, int summitCount, int middle, int firstRow, int lastRow)
 {
     for (int source = firstRow; source < lastRow; ++source)
@@ -93,6 +96,7 @@ void royFloydWarshallCore(Matrix &matrix, int summitCount, int middle, int first
         }
 }
 
+// appel classique
 void royFloydWarshall(Matrix &matrix, int summitCount)
 {
     for (int middle = 0; middle < summitCount; ++middle)
@@ -101,6 +105,7 @@ void royFloydWarshall(Matrix &matrix, int summitCount)
     }
 }
 
+// version thread 
 void royFloydWarshallThread(Matrix &matrix, int summitCount, int threadCount)
 {
     threadCount = min(threadCount, summitCount);
@@ -123,6 +128,7 @@ void royFloydWarshallThread(Matrix &matrix, int summitCount, int threadCount)
     }
 }
 
+// version openMP
 void royFloydWarshallOpenMP(Matrix &matrix, int summitCount, int threadCount)
 {
     omp_set_num_threads(threadCount);
@@ -140,6 +146,7 @@ void royFloydWarshallOpenMP(Matrix &matrix, int summitCount, int threadCount)
     }
 }
 
+// bfs implémenté pour l'étape 5
 vector<int> breadthFirstSearch(const vector<vector<pair<int, int>>> &graph, int source)
 {
     const int summitCount = static_cast<int>(graph.size());
@@ -205,17 +212,21 @@ int main()
 {
     const int threadCount = 4;
 
+    // creation N fois de graph random et calcul de royfloyd et bfs
     for (int summitCount : N)
     {
+        // on génère un graph random avec un nombre de sommet aléatoire
         vector<Summit> summits = generateRandomSummits(summitCount);
         vector<vector<pair<int, int>>> graph = generateRandomGraph(summitCount);
         Matrix initialMatrix;
+        // on convertit le graph en matrix pour l'algorithme de royfloyd
         graphToMatrix(graph, initialMatrix);
 
         Matrix matrixSequential = initialMatrix;
         Matrix matrixThread = initialMatrix;
         Matrix matrixOpenMP = initialMatrix;
 
+        // mesure du temps d'exec pour chaque algo
         auto startBfs = chrono::high_resolution_clock::now();
         vector<int> bfsDistances = breadthFirstSearch(graph, 0);
         auto endBfs = chrono::high_resolution_clock::now();
@@ -233,6 +244,7 @@ int main()
         royFloydWarshallOpenMP(matrixOpenMP, summitCount, threadCount);
         auto endOpenMP = chrono::high_resolution_clock::now();
 
+        // calcul speedup et tps d'exec
         chrono::duration<double> sequentialTime = endSequential - startSequential;
         chrono::duration<double> threadTime = endThread - startThread;
         chrono::duration<double> openMPTime = endOpenMP - startOpenMP;
