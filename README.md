@@ -73,4 +73,8 @@ J'ai réalisé des essais avec le même type de graphe pour les différentes tai
 
 On voit que le gain dépend de la taille du graphe : pour les petites tailles, le coût de création et de synchronisation des threads peut limiter le speedup. Pour les graphes plus grands, on voit que ça a un réel impact. Également, le BFS est beaucoup plus rapide que Roy-Floyd-Warshall lorsqu'il est lancé depuis une seule source, car il ne cherche pas les distances entre toutes les paires de sommets.
 
-Voir  [`figure_1.png`](./figure_1.png) pour voir mes résultats.
+Voir [`figure_1.png`](./figure_1.png) pour voir mes résultats qui m'ont indiqué ça.
+
+## Mon évaluation personnelle sur mon travail
+
+J'ai pu aller au bout du TD. Je pense que j'ai eu le plus de difficultés sur la réalisation de la première la parallélisation avec les threads pour comprendre comment réecrire la fonction. De plus j'ai pris du temps pour écrire une fonction "core" pour éviter la redondace de code. J'ai pris un peu de temps pour écrire la fonction BFS également.
