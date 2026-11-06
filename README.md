@@ -77,4 +77,4 @@ Voir [`figure_1.png`](./figure_1.png) pour voir mes résultats qui m'ont indiqu�
 
 ## Mon évaluation personnelle sur mon travail
 
-J'ai pu aller au bout du TD. Je pense que j'ai eu le plus de difficultés sur la réalisation de la première la parallélisation avec les threads pour comprendre comment réecrire la fonction. De plus j'ai pris du temps pour écrire une fonction "core" pour éviter la redondace de code. J'ai pris un peu de temps pour écrire la fonction BFS également.
+J'ai pu aller au bout du TD. Je pense que j'ai eu le plus de difficultés sur la réalisation de la première parallélisation avec les threads pour comprendre comment bien réecrire la fonction. De plus j'ai pris du temps pour écrire une fonction "core" pour éviter la redondace de code. J'ai pris un peu de temps pour écrire la fonction BFS également.
