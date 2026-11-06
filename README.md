@@ -67,6 +67,11 @@ Pour supprimer les fichiers compilés :
 make clean
 ```
 
+Build avec le sh si ça ne marche pas :
+```bash
+./build.sh
+```
+
 ## Résultats et conclusion
 
 J'ai réalisé des essais avec le même type de graphe pour les différentes tailles de N, et les versions std::thread et OpenMP permettent de comparer l'effet du parallélisme sur le temps de calcul de Roy-Floyd-Warshall via le speedup.
